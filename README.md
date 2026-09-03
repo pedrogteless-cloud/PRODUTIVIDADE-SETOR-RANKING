@@ -48,7 +48,7 @@ O payload externo usa `device_id` e `input_gpio`. No banco estes campos sao pers
 As migrations ficam em `supabase/migrations`.
 
 - `20260903170231_0001_init.sql`: schema base observado no projeto Supabase existente.
-- `20260903193000_0002_accept_production_event_rpc.sql`: adiciona `assignment_id`, RPC transacional, refresh do placar e grants.
+- `20260903194701_0002_accept_production_event_rpc.sql`: adiciona `assignment_id`, RPC transacional, refresh do placar e grants.
 
 Para aplicar em um projeto novo:
 

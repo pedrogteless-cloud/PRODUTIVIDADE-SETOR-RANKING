@@ -49,6 +49,7 @@ As migrations ficam em `supabase/migrations`.
 
 - `20260903170231_0001_init.sql`: schema base observado no projeto Supabase existente.
 - `20260903194701_0002_accept_production_event_rpc.sql`: adiciona `assignment_id`, RPC transacional, refresh do placar e grants.
+- `20260903200015_0003_rls_and_fk_indexes.sql`: adiciona politicas RLS explicitas e indices para FKs.
 
 Para aplicar em um projeto novo:
 

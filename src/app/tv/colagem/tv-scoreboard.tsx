@@ -130,39 +130,63 @@ export function TvScoreboard() {
     void loadSnapshot();
 
     if (supabase) {
-      const channel = supabase
-        .channel("tv-colagem-scoreboard")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "sector_live_scoreboard",
-            filter: "sector_slug=eq.colagem",
-          },
-          (payload) => {
-            const row = payload.new as ScoreboardRow;
-            applyScoreboard(normalizeScoreboard(row));
-            setStatus("ao vivo");
-          },
-        )
-        .subscribe((subscriptionStatus) => {
-          if (subscriptionStatus === "SUBSCRIBED") {
-            setStatus("ao vivo");
-            return;
-          }
+      let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+      let reconnectAttempt = 0;
+      let channel: ReturnType<typeof supabase.channel> | null = null;
 
-          if (
-            subscriptionStatus === "CHANNEL_ERROR" ||
-            subscriptionStatus === "TIMED_OUT" ||
-            subscriptionStatus === "CLOSED"
-          ) {
-            console.error("realtime subscription failed", subscriptionStatus);
-            if (mounted) {
-              setStatus(`erro: realtime ${subscriptionStatus.toLowerCase()}`);
+      function connectRealtime() {
+        if (!mounted || !supabase) {
+          return;
+        }
+
+        channel = supabase
+          .channel(`tv-colagem-scoreboard-${reconnectAttempt}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "sector_live_scoreboard",
+              filter: "sector_slug=eq.colagem",
+            },
+            (payload) => {
+              const row = payload.new as ScoreboardRow;
+              applyScoreboard(normalizeScoreboard(row));
+              setStatus("ao vivo");
+            },
+          )
+          .subscribe((subscriptionStatus) => {
+            if (!mounted) {
+              return;
             }
-          }
-        });
+
+            if (subscriptionStatus === "SUBSCRIBED") {
+              reconnectAttempt = 0;
+              setStatus("ao vivo");
+              return;
+            }
+
+            if (
+              subscriptionStatus === "CHANNEL_ERROR" ||
+              subscriptionStatus === "TIMED_OUT" ||
+              subscriptionStatus === "CLOSED"
+            ) {
+              console.error("realtime subscription failed", subscriptionStatus);
+              setStatus(`erro: realtime ${subscriptionStatus.toLowerCase()}, reconectando`);
+
+              if (channel) {
+                void supabase.removeChannel(channel);
+                channel = null;
+              }
+
+              const delay = Math.min(30000, 2000 * 2 ** reconnectAttempt);
+              reconnectAttempt += 1;
+              reconnectTimer = setTimeout(connectRealtime, delay);
+            }
+          });
+      }
+
+      connectRealtime();
 
       pollTimer = setInterval(loadSnapshot, 15000);
 
@@ -171,7 +195,12 @@ export function TvScoreboard() {
         if (pollTimer) {
           clearInterval(pollTimer);
         }
-        void supabase.removeChannel(channel);
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+        }
+        if (channel) {
+          void supabase.removeChannel(channel);
+        }
       };
     }
 

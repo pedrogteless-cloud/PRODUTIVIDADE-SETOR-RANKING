@@ -47,6 +47,14 @@ struct SendResult {
 };
 
 ButtonInput buttons[] = {
+  {4, HIGH, HIGH, false, 0, 0},
+  {5, HIGH, HIGH, false, 0, 0},
+  {13, HIGH, HIGH, false, 0, 0},
+  {14, HIGH, HIGH, false, 0, 0},
+  {16, HIGH, HIGH, false, 0, 0},
+  {17, HIGH, HIGH, false, 0, 0},
+  {18, HIGH, HIGH, false, 0, 0},
+  {19, HIGH, HIGH, false, 0, 0},
   {27, HIGH, HIGH, false, 0, 0},
 };
 
@@ -68,7 +76,8 @@ void setup() {
   setupClock();
 
   Serial.println("Sistema de produtividade Colagem iniciado.");
-  Serial.println("GPIO 27 com INPUT_PULLUP, debounce 50 ms e cooldown 5 s.");
+  Serial.print(sizeof(buttons) / sizeof(buttons[0]));
+  Serial.println(" botoes com INPUT_PULLUP, debounce 50 ms e cooldown 5 s.");
 }
 
 void loop() {

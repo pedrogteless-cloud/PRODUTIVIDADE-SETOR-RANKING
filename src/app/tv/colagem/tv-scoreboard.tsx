@@ -44,31 +44,46 @@ export function TvScoreboard() {
     const supabase = createSupabaseBrowserClient();
 
     async function loadSnapshot() {
-      try {
-        if (supabase) {
-          const { data, error } = await supabase
-            .from("sector_live_scoreboard")
-            .select(
-              "sector_id, sector_name, sector_slug, production_day, ranking, total_units, updated_at",
-            )
-            .eq("sector_slug", "colagem")
-            .maybeSingle();
+      if (supabase) {
+        const { data, error } = await supabase
+          .from("sector_live_scoreboard")
+          .select(
+            "sector_id, sector_name, sector_slug, production_day, ranking, total_units, updated_at",
+          )
+          .eq("sector_slug", "colagem")
+          .maybeSingle();
 
-          if (error) {
-            throw error;
+        if (error) {
+          console.error("falha ao consultar sector_live_scoreboard", error);
+          if (mounted) {
+            setStatus(`erro: ${error.message}`);
           }
-
-          if (data && mounted) {
-            applyScoreboard(normalizeScoreboard(data as ScoreboardRow));
-            setStatus("ao vivo");
-          }
-
           return;
         }
 
+        if (mounted) {
+          if (data) {
+            applyScoreboard(normalizeScoreboard(data as ScoreboardRow));
+            setStatus("ao vivo");
+          } else {
+            setStatus("aguardando dados");
+          }
+        }
+
+        return;
+      }
+
+      try {
         const response = await fetch("/api/v1/scoreboard?sector=colagem", {
           cache: "no-store",
         });
+
+        if (response.status === 404) {
+          if (mounted) {
+            setStatus("aguardando dados");
+          }
+          return;
+        }
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -79,9 +94,12 @@ export function TvScoreboard() {
           applyScoreboard(data);
           setStatus("ao vivo");
         }
-      } catch {
+      } catch (error) {
+        console.error("falha ao consultar /api/v1/scoreboard", error);
         if (mounted) {
-          setStatus("aguardando dados");
+          setStatus(
+            `erro: ${error instanceof Error ? error.message : "falha desconhecida"}`,
+          );
         }
       }
     }

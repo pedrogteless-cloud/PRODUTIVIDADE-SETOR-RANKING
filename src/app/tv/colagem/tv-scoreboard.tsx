@@ -149,6 +149,18 @@ export function TvScoreboard() {
         .subscribe((subscriptionStatus) => {
           if (subscriptionStatus === "SUBSCRIBED") {
             setStatus("ao vivo");
+            return;
+          }
+
+          if (
+            subscriptionStatus === "CHANNEL_ERROR" ||
+            subscriptionStatus === "TIMED_OUT" ||
+            subscriptionStatus === "CLOSED"
+          ) {
+            console.error("realtime subscription failed", subscriptionStatus);
+            if (mounted) {
+              setStatus(`erro: realtime ${subscriptionStatus.toLowerCase()}`);
+            }
           }
         });
 

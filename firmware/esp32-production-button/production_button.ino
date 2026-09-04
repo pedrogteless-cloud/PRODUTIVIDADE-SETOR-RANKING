@@ -46,15 +46,11 @@ struct SendResult {
   int httpCode;
 };
 
+// Prototipo: apenas o botao do GPIO 27, que e o unico cabeado e o unico
+// com atribuicao ativa em device_button_assignments. Para escalar o setor
+// depois, basta acrescentar linhas aqui (ex.: {4, HIGH, HIGH, false, 0, 0})
+// e criar a atribuicao correspondente no banco para cada GPIO novo.
 ButtonInput buttons[] = {
-  {4, HIGH, HIGH, false, 0, 0},
-  {5, HIGH, HIGH, false, 0, 0},
-  {13, HIGH, HIGH, false, 0, 0},
-  {14, HIGH, HIGH, false, 0, 0},
-  {16, HIGH, HIGH, false, 0, 0},
-  {17, HIGH, HIGH, false, 0, 0},
-  {18, HIGH, HIGH, false, 0, 0},
-  {19, HIGH, HIGH, false, 0, 0},
   {27, HIGH, HIGH, false, 0, 0},
 };
 

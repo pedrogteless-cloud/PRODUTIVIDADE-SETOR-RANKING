@@ -10,6 +10,19 @@ type ScoreboardRow = Omit<ScoreboardSnapshot, "ranking"> & {
   ranking: unknown;
 };
 
+const FACTORY_TIMEZONE = "America/Fortaleza";
+
+const productionDayFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: FACTORY_TIMEZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+function currentProductionDay(): string {
+  return productionDayFormatter.format(new Date());
+}
+
 function normalizeScoreboard(row: ScoreboardRow): ScoreboardSnapshot {
   const ranking = Array.isArray(row.ranking)
     ? row.ranking.map((item, index) => {
@@ -36,7 +49,13 @@ export function TvScoreboard() {
   const [scoreboard, setScoreboard] = useState<ScoreboardSnapshot | null>(null);
   const [status, setStatus] = useState("conectando");
   const [surgingIds, setSurgingIds] = useState<Set<string>>(new Set());
+  const [today, setToday] = useState(currentProductionDay);
   const previousPositionsRef = useRef<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    const clockTimer = setInterval(() => setToday(currentProductionDay()), 30000);
+    return () => clearInterval(clockTimer);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -214,17 +233,23 @@ export function TvScoreboard() {
     };
   }, []);
 
-  const maxUnits = useMemo(() => {
-    return Math.max(1, ...(scoreboard?.ranking.map((item) => item.units) ?? [1]));
-  }, [scoreboard]);
+  const isCurrentDay = scoreboard?.production_day === today;
+  const visibleRanking = isCurrentDay ? scoreboard.ranking : [];
+  const visibleTotal = isCurrentDay ? scoreboard.total_units : 0;
 
-  const updatedAt = scoreboard?.updated_at
-    ? new Intl.DateTimeFormat("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      }).format(new Date(scoreboard.updated_at))
-    : "--:--:--";
+  const maxUnits = useMemo(() => {
+    return Math.max(1, ...visibleRanking.map((item) => item.units));
+  }, [visibleRanking]);
+
+  const updatedAt =
+    isCurrentDay && scoreboard.updated_at
+      ? new Intl.DateTimeFormat("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          timeZone: FACTORY_TIMEZONE,
+        }).format(new Date(scoreboard.updated_at))
+      : "--:--:--";
 
   return (
     <main className="tv-screen">
@@ -242,24 +267,23 @@ export function TvScoreboard() {
             <div className="stat-block">
               <span className="stat-label">Dia</span>
               <span className="stat-value">
-                {scoreboard?.production_day
-                  ? new Intl.DateTimeFormat("pt-BR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                    }).format(new Date(`${scoreboard.production_day}T12:00:00`))
-                  : "--/--"}
+                {new Intl.DateTimeFormat("pt-BR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  timeZone: FACTORY_TIMEZONE,
+                }).format(new Date(`${today}T12:00:00`))}
               </span>
             </div>
             <div className="stat-block">
               <span className="stat-label">Total</span>
-              <span className="stat-value">{scoreboard?.total_units ?? 0}</span>
+              <span className="stat-value">{visibleTotal}</span>
             </div>
           </div>
         </header>
 
         <section className="race-track" aria-live="polite">
-          {scoreboard && scoreboard.ranking.length > 0 ? (
-            scoreboard.ranking.map((item) => {
+          {visibleRanking.length > 0 ? (
+            visibleRanking.map((item) => {
               const fill = Math.max(8, Math.round((item.units / maxUnits) * 100));
               const initials = item.display_name
                 .split(" ")

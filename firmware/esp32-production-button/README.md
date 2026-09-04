@@ -5,9 +5,12 @@ Firmware Arduino/PlatformIO para o prototipo validado da area de Colagem.
 ## Hardware
 
 - ESP32 DevKit / ESP32-WROOM-32
-- Botoeira industrial NA/NO
-- Botao entre GPIO 27 e GND
-- `INPUT_PULLUP`
+- Botoeira industrial NA/NO, uma por pessoa
+- 9 botoes, cada um entre um GPIO e GND (`INPUT_PULLUP`):
+  `4, 5, 13, 14, 16, 17, 18, 19, 27`
+- Cada `input_gpio` recebido pela API precisa ter uma atribuicao ativa em
+  `device_button_assignments` para o dispositivo `esp32-colagem-prototipo-01`,
+  senao a API responde `no_assignment`.
 
 ## Logica preservada
 
